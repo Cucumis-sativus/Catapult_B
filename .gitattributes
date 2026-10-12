@@ -1,0 +1,4 @@
+# Windows と WSL / Mac が混ざっても改行コードを LF にそろえる
+* text=auto eol=lf
+*.png binary
+*.jpg binary

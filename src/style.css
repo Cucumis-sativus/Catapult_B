@@ -1,0 +1,145 @@
+/* ビジュアルデザイン(配置、配色、フォント)は【未決定】。決まるまでの仮のスタイル */
+:root {
+  font-family: system-ui, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
+  line-height: 1.6;
+  color: #222;
+  background: #fff;
+}
+
+body {
+  margin: 0;
+  padding: 16px;
+}
+
+#app {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+button {
+  margin: 4px 8px 4px 0;
+  padding: 8px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.error-message {
+  color: #c0392b;
+  font-weight: bold;
+}
+
+/* SCR-01 ホーム */
+.notice {
+  padding: 4px 16px;
+  border-left: 4px solid #e0a800;
+  background: #fff8e1;
+}
+
+.mode-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 12px;
+}
+
+.mode-item p {
+  margin: 4px 0;
+}
+
+/* SCR-02 台本設定 */
+.script-input {
+  box-sizing: border-box;
+  width: 100%;
+  font-size: 1rem;
+}
+
+.preset-list label {
+  display: block;
+  margin: 4px 0;
+}
+
+/* SCR-03 練習: 話しながらでも読めるよう、速さと判定は大きく出す(9章 使用性) */
+.audience {
+  min-height: 160px;
+  border: 1px dashed #bbb;
+}
+
+.speed-value {
+  margin: 8px 0 0;
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.speed-level {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.speed-level[data-speed-level='slow'] {
+  color: #2c6fbb;
+}
+
+.speed-level[data-speed-level='optimal'] {
+  color: #2e8b57;
+}
+
+.speed-level[data-speed-level='fast'] {
+  color: #c0392b;
+}
+
+/* 台本は読みやすい文字サイズで出す(9章 使用性) */
+.script-text {
+  font-size: 1.25rem;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}
+
+.transcript {
+  min-height: 3em;
+  white-space: pre-wrap;
+}
+
+/* SCR-04 結果 */
+.summary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+}
+
+.summary dd {
+  margin: 0;
+}
+
+/* 台本との違いの見せ方は【未決定】。仮の表示 */
+.diff-missing {
+  color: #c0392b;
+  text-decoration: line-through;
+}
+
+.diff-extra {
+  color: #2c6fbb;
+  text-decoration: underline;
+}
+
+/* SCR-05 履歴 */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th,
+.history-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+.history-table tbody tr {
+  cursor: pointer;
+}
+
+.history-table tbody tr:hover,
+.history-table tbody tr:focus {
+  background: #f2f6fb;
+}
