@@ -1,5 +1,7 @@
+import { judgeSpeed } from '../analysis/judge';
 import { calculateMatchRate } from '../analysis/scriptMatcher';
 import { calculateCpm, countCharacters } from '../analysis/speedCalculator';
+import { SPEED_WINDOW_SEC } from '../constants';
 import { SpeechRecognizer } from '../speech/speechRecognizer';
 import type {
   AppErrorCode,
@@ -10,6 +12,12 @@ import type {
 } from '../types';
 
 // 練習の開始・終了・集計(F-02, F-07)
+
+/** 直近の対象期間(SPEED_WINDOW_SEC)の文字数差分を求めるための記録 */
+interface CharCountSnapshot {
+  elapsedSec: number;
+  charCount: number;
+}
 
 /** 音声認識インスタンス(F-02, F-03, F-07 で共有する) */
 const recognizer = new SpeechRecognizer();
@@ -28,6 +36,9 @@ let startedAtIso: string | null = null;
 
 /** 練習中に記録された計測サンプル一覧 */
 let sessionSamples: MeasurementSample[] = [];
+
+/** 経過秒ごとの累計文字数の履歴(F-04) */
+let charCountSnapshots: CharCountSnapshot[] = [];
 
 /** 練習中かどうか */
 let isRunning = false;
@@ -141,6 +152,7 @@ export async function startSession(mode: PracticeMode, script: ScriptSource | nu
   startedAtMs = Date.now();
   startedAtIso = new Date(startedAtMs).toISOString();
   sessionSamples = [];
+  charCountSnapshots = [{ elapsedSec: 0, charCount: 0 }];
   confirmedTranscript = '';
   interimTranscript = '';
   isRunning = true;
@@ -169,6 +181,7 @@ export function stopSession(): SessionRecord {
   startedAtMs = null;
   startedAtIso = null;
   sessionSamples = [];
+  charCountSnapshots = [];
   confirmedTranscript = '';
   interimTranscript = '';
 
@@ -177,8 +190,36 @@ export function stopSession(): SessionRecord {
 
 /** JUDGE_INTERVAL_MS ごとに呼ばれ、計測と判定を1回行う */
 export function updateJudgement(): MeasurementSample {
-  // TODO(F-04): 未実装。仮の値を返している
-  return { elapsedSec: 0, cpm: 0, speedLevel: 'optimal' };
+  const nowMs = Date.now();
+  const elapsedSec = startedAtMs !== null ? Math.max(0, (nowMs - startedAtMs) / 1000) : 0;
+  const charCount = countCharacters(getTranscript());
+
+  let windowCharCount = charCount;
+  let windowSec = elapsedSec;
+
+  if (elapsedSec > SPEED_WINDOW_SEC && charCountSnapshots.length > 0) {
+    const windowStartSec = elapsedSec - SPEED_WINDOW_SEC;
+    let baseSnapshot: CharCountSnapshot = charCountSnapshots[0] ?? { elapsedSec: 0, charCount: 0 };
+    for (const snapshot of charCountSnapshots) {
+      if (snapshot.elapsedSec <= windowStartSec) {
+        baseSnapshot = snapshot;
+      } else {
+        break;
+      }
+    }
+    windowCharCount = Math.max(0, charCount - baseSnapshot.charCount);
+    windowSec = elapsedSec - baseSnapshot.elapsedSec;
+  }
+
+  // TODO【未決定】: 黙っているあいだの速さの判定は未決定(要件定義書 4.1)。仮実装としてそのまま計算を続ける
+  const cpm = calculateCpm(windowCharCount, windowSec);
+  const speedLevel = judgeSpeed(cpm);
+
+  charCountSnapshots.push({ elapsedSec, charCount });
+
+  const sample: MeasurementSample = { elapsedSec, cpm, speedLevel };
+  sessionSamples.push(sample);
+  return sample;
 }
 
 /** 平均値と割合を集計する */
