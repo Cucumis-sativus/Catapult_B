@@ -53,16 +53,19 @@ describe('AudienceView (F-05)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('初期化時にコンテナへ観客用の img 要素を追加する', () => {
+  it('初期化時にコンテナへ背景と通常の観客の img 要素を追加する', () => {
     const container = createMockContainer();
 
     new AudienceView(container as unknown as HTMLElement);
 
-    expect(container.children).toHaveLength(1);
-    const img = container.children[0];
+    expect(container.children).toHaveLength(2);
+    const [background, img] = container.children;
+    expect(background?.className).toBe('audience-background');
+    expect(background?.src).toBe('/sprites/sprite_bg.svg');
+    expect(background?.alt).toBe('');
     expect(img?.className).toBe('audience-sprite');
-    expect(img?.src).toBe('/sprites/audience_optimal.png');
-    expect(img?.alt).toBe('観客(最適)');
+    expect(img?.src).toBe('/sprites/sprite_normal.svg');
+    expect(img?.alt).toBe('観客');
   });
 
   it('loadSprites で3種類の観客スプライト画像を先に読み込む', async () => {
@@ -114,7 +117,7 @@ describe('AudienceView (F-05)', () => {
   it('setSprite で4.3の対応表どおりに画像を切り替える', () => {
     const container = createMockContainer();
     const view = new AudienceView(container as unknown as HTMLElement);
-    const img = container.children[0]!;
+    const img = container.children[1]!;
 
     const cases: {
       spriteKey: AudienceSpriteKey;
@@ -154,7 +157,7 @@ describe('AudienceView (F-05)', () => {
   it('setSprite に前回と同じスプライトキーを渡した場合は画像の切り替えを行わない', () => {
     const container = createMockContainer();
     const view = new AudienceView(container as unknown as HTMLElement);
-    const img = container.children[0]!;
+    const img = container.children[1]!;
 
     let srcValue = img.src;
     const srcSetterSpy = vi.fn((nextSrc: string) => {

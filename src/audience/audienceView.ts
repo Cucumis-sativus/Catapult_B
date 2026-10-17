@@ -3,8 +3,17 @@ import type { AudienceSpriteKey, SpeedLevel } from '../types';
 
 // 観客スプライトの表示(F-05、要件定義書 4.3)
 // 画像は public/sprites/{spriteKey}.png。パスは SPRITE_BASE_PATH から作る
+// 背景(sprite_bg)の上に観客の画像を重ねる。2枚は同じ縦横比で、そのまま重ねると位置が合う
+// 判定が出る前は通常の観客(sprite_normal)を出す
 // TODO【未決定】: 描画方法(PixiJS か <img> の切り替えか)は未決定のため、仮実装として <img> の切り替えで表示する
 // TODO【未決定】: 観客の人数、画像サイズ、アニメーションの有無は未決定
+// TODO: audience_slow / optimal / fast の画像は仮置き(sprite_normal に色を付けたもの)。絵ができたら差し替える
+
+/** 背景の画像ファイル名。どの状態でも変わらない */
+const BACKGROUND_SPRITE_FILE = 'sprite_bg.svg';
+
+/** 判定が出る前(起動時、練習開始直後)の観客の画像ファイル名 */
+const NORMAL_SPRITE_FILE = 'sprite_normal.svg';
 
 /** 読み込む3種類のスプライトキー一覧(4.3の表) */
 const AUDIENCE_SPRITE_KEYS: readonly AudienceSpriteKey[] = [
@@ -47,15 +56,21 @@ export class AudienceView {
   /** 先読みした画像要素のキャッシュ */
   private readonly preloadedImages = new Map<AudienceSpriteKey, HTMLImageElement>();
 
-  /** container: 観客を描く場所(練習画面が渡す) */
+  /** container: 観客を描く場所(ホーム画面と練習画面が渡す) */
   constructor(container: HTMLElement) {
+    // 背景は飾りなので代替テキストを空にする
+    const backgroundImage = document.createElement('img');
+    backgroundImage.className = 'audience-background';
+    backgroundImage.src = `${SPRITE_BASE_PATH}${BACKGROUND_SPRITE_FILE}`;
+    backgroundImage.alt = '';
+
+    // まだ判定が出ていないあいだは通常の観客を出す
     const img = document.createElement('img');
     img.className = 'audience-sprite';
-    // TODO【未決定】: 練習開始直後など、まだ判定が出ていないときの表示は未決定(待機用スプライトを用意するか、audience_optimal を出すか)。仮実装として audience_optimal の画像パスを初期設定する
-    img.src = buildSpritePath('audience_optimal');
-    img.alt = SPRITE_ALT_LABELS.audience_optimal;
+    img.src = `${SPRITE_BASE_PATH}${NORMAL_SPRITE_FILE}`;
+    img.alt = '観客';
     this.imageElement = img;
-    container.append(img);
+    container.append(backgroundImage, img);
   }
 
   /** 3枚の画像を先に読み込む */

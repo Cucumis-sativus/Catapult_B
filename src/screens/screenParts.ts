@@ -39,6 +39,28 @@ export function isAppErrorCode(value: unknown): value is AppErrorCode {
   return typeof value === 'string' && value in ERROR_MESSAGES;
 }
 
+/**
+ * 台本(自分の台本・お題文)のタイトルと本文を出す欄を作る。
+ * ホーム画面と練習画面で、開始・終了ボタンの上に置く。長い台本は欄の中でスクロールする
+ */
+export function createScriptPanel(script: ScriptSource): HTMLElement {
+  const panel = document.createElement('section');
+  panel.className = 'script-panel';
+  panel.setAttribute('aria-label', '台本');
+  // キーボードでもスクロールできるようにする
+  panel.tabIndex = 0;
+
+  const title = document.createElement('h2');
+  title.className = 'script-panel-title';
+  title.textContent = script.title;
+  const text = document.createElement('p');
+  text.className = 'script-text';
+  text.textContent = script.text;
+
+  panel.append(title, text);
+  return panel;
+}
+
 /** 秒を「分:秒」の形にする(例: 75 → '1:15') */
 export function formatDurationSec(durationSec: number): string {
   const totalSec = Math.floor(durationSec);

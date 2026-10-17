@@ -1,92 +1,617 @@
-/* ビジュアルデザイン(配置、配色、フォント)は【未決定】。決まるまでの仮のスタイル */
+/* ビジュアルデザイン: 参考画像(観客席の前に立つ舞台)に合わせる */
 :root {
-  font-family: system-ui, 'Hiragino Sans', 'Yu Gothic UI', sans-serif;
-  line-height: 1.6;
-  color: #222;
-  background: #fff;
+  /* 背景画像(sprite_bg)の色。舞台の外側をこの色でつなぐ */
+  --color-sky: #fffdda;
+  --color-wall: #3e3e3e;
+  --color-floor: #4e4b77;
+  /* 操作の色 */
+  --color-accent: #ff4848;
+  --color-accent-strong: #e83a3a;
+  --color-highlight: #ffc459;
+  /* 文字と紙の色。黒ではなく温かみのある焦げ茶にする */
+  --color-ink: #3a2e28;
+  --color-ink-soft: #7a6a5c;
+  --color-paper: #fffef6;
+  --color-line: #ece0b8;
+  --color-error: #d63a2f;
+  /* 速さの判定の色 */
+  --color-slow: #3d7fd1;
+  --color-optimal: #2f9e63;
+  --color-fast: #e23d3d;
+
+  font-family:
+    'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'BIZ UDPGothic', 'Yu Gothic UI', sans-serif;
+  font-weight: 500;
+  line-height: 1.7;
+  color: var(--color-ink);
+  background: var(--color-sky);
 }
 
 body {
   margin: 0;
-  padding: 16px;
 }
 
 #app {
   max-width: 880px;
   margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+h1 {
+  margin: 0.5em 0;
+  font-size: 1.75rem;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+h2 {
+  margin: 1.5em 0 0.5em;
+  font-size: 1.2rem;
+  font-weight: 700;
 }
 
 button {
   margin: 4px 8px 4px 0;
-  padding: 8px 16px;
-  font-size: 1rem;
+  padding: 10px 22px;
+  border: 2px solid var(--color-ink);
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-ink);
+  background: #fff;
   cursor: pointer;
+  transition:
+    background-color 0.15s,
+    transform 0.1s;
+}
+
+button:hover {
+  background: #fff4cc;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:focus-visible {
+  outline: 3px solid var(--color-highlight);
+  outline-offset: 3px;
+}
+
+button:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.button-primary {
+  border-color: var(--color-accent);
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.button-primary:hover {
+  border-color: var(--color-accent-strong);
+  background: var(--color-accent-strong);
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 28px;
+}
+
+.page-actions button {
+  margin: 0;
 }
 
 .error-message {
-  color: #c0392b;
-  font-weight: bold;
+  color: var(--color-error);
+  font-weight: 700;
 }
 
-/* SCR-01 ホーム */
-.notice {
-  padding: 4px 16px;
-  border-left: 4px solid #e0a800;
-  background: #fff8e1;
+/* ------------------------------------------------------------------
+ * 舞台(SCR-01 ホーム、SCR-03 練習)
+ * 背景と観客の画像は同じ縦横比(3508:2481)で、そのまま重ねると位置が合う。
+ * 画面に収まる最大の大きさで出し、はみ出さない。余った所は背景と同じ色の帯でつなぐ
+ * ------------------------------------------------------------------ */
+.stage {
+  /* 画像の幅と高さ */
+  --scene-w: min(100vw, 100dvh * 3508 / 2481);
+  --scene-h: min(100dvh, 100vw * 2481 / 3508);
+  /* 縦長の画面では、上に少し空、下に床を広めに残す */
+  --scene-top: max(0px, (100dvh - var(--scene-h)) * 0.4);
+  --scene-left: calc((100vw - var(--scene-w)) / 2);
+  /* 画面の端からの余白 */
+  --stage-gap: max(12px, var(--scene-h) * 0.025);
+
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  color: var(--color-ink);
+  background: var(--color-floor);
 }
 
-.mode-item {
+/* 画像の外側の帯。空と壁の境目は、画像の左端で 14.43%、右端で 15.74% の高さにある */
+.stage::before,
+.stage::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+}
+
+.stage::before {
+  left: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--color-sky) calc(var(--scene-top) + var(--scene-h) * 0.1443),
+    var(--color-wall) 0 calc(var(--scene-top) + var(--scene-h) * 0.8092),
+    var(--color-floor) 0
+  );
+}
+
+.stage::after {
+  right: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--color-sky) calc(var(--scene-top) + var(--scene-h) * 0.1574),
+    var(--color-wall) 0 calc(var(--scene-top) + var(--scene-h) * 0.8092),
+    var(--color-floor) 0
+  );
+}
+
+.stage-scene {
+  position: absolute;
+  z-index: 1;
+  top: var(--scene-top);
+  left: var(--scene-left);
+  width: var(--scene-w);
+  height: var(--scene-h);
+}
+
+.stage-scene img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 左上: 練習中の印、経過時間、練習モード */
+.stage-status {
+  position: absolute;
+  z-index: 2;
+  top: var(--stage-gap);
+  left: max(12px, var(--scene-left) + var(--scene-w) * 0.022);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 12px;
+  gap: 8px clamp(10px, var(--scene-w) * 0.012, 18px);
 }
 
-.mode-item p {
-  margin: 4px 0;
+.stage-status p {
+  margin: 0;
 }
 
-/* SCR-02 台本設定 */
-.script-input {
-  box-sizing: border-box;
-  width: 100%;
-  font-size: 1rem;
+.elapsed-time {
+  display: flex;
+  flex-direction: column;
+  font-size: clamp(1.75rem, var(--scene-h) * 0.062, 3.75rem);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
-.preset-list label {
+.elapsed-label {
+  margin-bottom: 0.3em;
+  font-size: clamp(0.75rem, var(--scene-h) * 0.016, 0.95rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-soft);
+}
+
+.mode-chip,
+.recording-indicator {
+  padding: 0.3em 0.95em;
+  border-radius: 999px;
+  font-size: clamp(0.85rem, var(--scene-h) * 0.022, 1.25rem);
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.mode-chip {
+  border: 2px solid var(--color-ink);
+  background: var(--color-paper);
+}
+
+.recording-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.recording-indicator::before {
+  content: '';
+  width: 0.6em;
+  height: 0.6em;
+  border-radius: 50%;
+  background: #fff;
+  animation: recording-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes recording-pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* 右上: ハンバーガーメニュー(ホームだけ) */
+.stage-menu {
+  position: absolute;
+  z-index: 3;
+  top: var(--stage-gap);
+  right: max(12px, var(--scene-left) + var(--scene-w) * 0.026);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.menu-toggle {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: clamp(48px, var(--scene-w) * 0.071, 96px);
+  aspect-ratio: 142 / 110;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.menu-toggle:hover {
+  background: transparent;
+}
+
+.menu-toggle span {
   display: block;
-  margin: 4px 0;
+  height: 24%;
+  border-radius: 999px;
+  background: #000;
+  transition: transform 0.2s;
 }
 
-/* SCR-03 練習: 話しながらでも読めるよう、速さと判定は大きく出す(9章 使用性) */
-.audience {
-  min-height: 160px;
-  border: 1px dashed #bbb;
+/* 開いているあいだは × にする */
+.menu-toggle[aria-expanded='true'] span:nth-child(1) {
+  transform: translateY(160%) rotate(45deg) scaleX(0.8);
+}
+
+.menu-toggle[aria-expanded='true'] span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-toggle[aria-expanded='true'] span:nth-child(3) {
+  transform: translateY(-160%) rotate(-45deg) scaleX(0.8);
+}
+
+.menu-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: clamp(200px, var(--scene-w) * 0.2, 320px);
+  margin-top: clamp(8px, var(--scene-h) * 0.015, 16px);
+  padding: clamp(8px, var(--scene-h) * 0.012, 14px);
+  border-radius: clamp(14px, var(--scene-h) * 0.022, 24px);
+  background: rgb(150 150 150 / 82%);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 30%);
+  backdrop-filter: blur(6px);
+  animation: menu-open 0.16s ease-out;
+}
+
+.menu-panel[hidden] {
+  display: none;
+}
+
+@keyframes menu-open {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.menu-item {
+  margin: 0;
+  padding: 0.3em 0.8em;
+  border: 4px solid transparent;
+  border-radius: 14px;
+  font-size: clamp(1.1rem, var(--scene-h) * 0.04, 2rem);
+  font-weight: 900;
+  text-align: left;
+  color: #111;
+  background: transparent;
+}
+
+.menu-item:hover {
+  background: rgb(255 255 255 / 22%);
+}
+
+/* いまの練習モード(参考画像の黄色い枠) */
+.menu-item[aria-current='true'] {
+  border-color: var(--color-highlight);
+  background: rgb(90 90 90 / 30%);
+  box-shadow: 0 0 0 3px rgb(255 196 89 / 45%);
+}
+
+.menu-divider {
+  width: calc(100% - 24px);
+  margin: 6px auto;
+  border: 0;
+  border-top: 2px solid rgb(0 0 0 / 22%);
+}
+
+.menu-divider ~ .menu-item {
+  font-size: clamp(1rem, var(--scene-h) * 0.03, 1.5rem);
+  font-weight: 700;
+}
+
+/* 上の右: 現在の速さと判定(練習中だけ)。話しながらでも読めるよう大きく出す(9章 使用性) */
+.speed-meter {
+  position: absolute;
+  z-index: 2;
+  top: var(--stage-gap);
+  right: max(12px, var(--scene-left) + var(--scene-w) * 0.022);
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, var(--scene-w) * 0.01, 16px);
+  padding: 0.35em 0.5em 0.35em 1em;
+  border-radius: 999px;
+  font-size: clamp(1rem, var(--scene-h) * 0.024, 1.4rem);
+  background: rgb(255 254 246 / 94%);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 18%);
 }
 
 .speed-value {
-  margin: 8px 0 0;
-  font-size: 3rem;
-  font-weight: bold;
+  margin: 0;
+  font-size: 2.4em;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.speed-unit {
+  margin-left: 0.25em;
+  font-size: 0.4em;
+  font-weight: 700;
+  color: var(--color-ink-soft);
 }
 
 .speed-level {
+  min-width: 3.5em;
   margin: 0;
-  font-size: 2rem;
-  font-weight: bold;
+  padding: 0.25em 0.8em;
+  border-radius: 999px;
+  font-size: 1.25em;
+  font-weight: 900;
+  text-align: center;
+  color: var(--color-ink-soft);
+  background: #eee6cf;
 }
 
 .speed-level[data-speed-level='slow'] {
-  color: #2c6fbb;
+  color: #fff;
+  background: var(--color-slow);
 }
 
 .speed-level[data-speed-level='optimal'] {
-  color: #2e8b57;
+  color: #fff;
+  background: var(--color-optimal);
 }
 
 .speed-level[data-speed-level='fast'] {
-  color: #c0392b;
+  color: #fff;
+  background: var(--color-fast);
 }
+
+/* 下の中央: 台本と、開始・終了ボタン */
+.stage-controls {
+  position: absolute;
+  z-index: 2;
+  bottom: var(--stage-gap);
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, var(--scene-h) * 0.016, 16px);
+  width: min(100vw - 32px, max(var(--scene-w) * 0.64, 560px), 860px);
+  transform: translateX(-50%);
+}
+
+.stage-controls .error-message {
+  margin: 0;
+  padding: 0.4em 1.2em;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+}
+
+.stage-button {
+  width: clamp(200px, var(--scene-w) * 0.31, 560px);
+  height: clamp(64px, var(--scene-h) * 0.133, 150px);
+  margin: 0;
+  border: 0;
+  border-radius: clamp(18px, var(--scene-h) * 0.035, 40px);
+  font-size: clamp(1.75rem, var(--scene-h) * 0.072, 4.5rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  box-shadow: 0 6px 0 rgb(0 0 0 / 22%);
+}
+
+.stage-button:active {
+  box-shadow: 0 2px 0 rgb(0 0 0 / 22%);
+  transform: translateY(4px);
+}
+
+.stage-button:focus-visible {
+  outline: 5px solid var(--color-highlight);
+  outline-offset: 4px;
+}
+
+.stage-button-start {
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.stage-button-start:hover {
+  background: var(--color-accent-strong);
+}
+
+.stage-button-stop {
+  color: var(--color-ink);
+  background: var(--color-sky);
+}
+
+.stage-button-stop:hover {
+  background: #fff6c0;
+}
+
+/* 終了ボタンの「■」 */
+.stage-button-stop::before {
+  content: '';
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-right: 0.3em;
+  border-radius: 0.12em;
+  background: var(--color-accent);
+  vertical-align: 0.02em;
+}
+
+/* 台本は読みやすい文字サイズで出す(9章 使用性)。長い台本は欄の中でスクロールする */
+.script-panel {
+  box-sizing: border-box;
+  width: 100%;
+  max-height: clamp(120px, var(--scene-h) * 0.34, 44dvh);
+  overflow-y: auto;
+  padding: clamp(10px, var(--scene-h) * 0.018, 18px) clamp(16px, var(--scene-w) * 0.02, 28px);
+  border-radius: clamp(14px, var(--scene-h) * 0.025, 24px);
+  background: rgb(255 254 246 / 95%);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
+}
+
+.script-panel:focus-visible {
+  outline: 3px solid var(--color-highlight);
+  outline-offset: 3px;
+}
+
+.script-panel-title {
+  margin: 0 0 0.2em;
+  font-size: clamp(0.8rem, var(--scene-h) * 0.018, 1rem);
+  font-weight: 700;
+  color: var(--color-ink-soft);
+}
+
+.script-panel .script-text {
+  margin: 0;
+  font-size: clamp(1.05rem, var(--scene-h) * 0.028, 1.6rem);
+}
+
+/* 縦長の画面では、台本を床の上に広めに出す */
+@media (max-aspect-ratio: 3508 / 2481) {
+  .script-panel {
+    max-height: 32dvh;
+  }
+}
+
+/* 幅の狭い画面では、速さの表示を左上の下に回す */
+@media (max-width: 640px) {
+  .speed-meter {
+    top: calc(var(--stage-gap) + 76px);
+  }
+}
+
+/* 使い方と注意書きのポップアップ */
+.usage-dialog {
+  box-sizing: border-box;
+  width: min(640px, 100vw - 32px);
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  border: 0;
+  border-radius: 28px;
+  color: var(--color-ink);
+  background: var(--color-paper);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 35%);
+}
+
+.usage-dialog[open] {
+  animation: dialog-open 0.2s ease-out;
+}
+
+.usage-dialog::backdrop {
+  background: rgb(40 36 70 / 55%);
+  backdrop-filter: blur(3px);
+}
+
+@keyframes dialog-open {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+}
+
+.usage-dialog-body {
+  padding: 28px clamp(20px, 5vw, 36px) 32px;
+}
+
+.usage-dialog h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.usage-dialog h2 {
+  margin: 20px 0 6px;
+  font-size: 1.1rem;
+}
+
+.usage-dialog ol,
+.usage-dialog ul {
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+.usage-dialog li {
+  margin: 4px 0;
+}
+
+.usage-dialog .notice {
+  margin-top: 20px;
+  padding: 2px 18px 14px;
+  border-left: 6px solid var(--color-highlight);
+  border-radius: 14px;
+  background: #fff4d2;
+}
+
+.usage-dialog .notice h2 {
+  margin-top: 12px;
+}
+
+.usage-dialog .button-primary {
+  display: block;
+  min-width: 220px;
+  margin: 24px auto 0;
+  padding: 12px 32px;
+  font-size: 1.25rem;
+}
+
+/* ------------------------------------------------------------------
+ * 紙の画面(SCR-02 台本設定、SCR-04 結果、SCR-05 履歴)
+ * ------------------------------------------------------------------ */
 
 /* 台本は読みやすい文字サイズで出す(9章 使用性) */
 .script-text {
@@ -95,44 +620,132 @@ button {
   white-space: pre-wrap;
 }
 
-.transcript {
-  min-height: 3em;
-  white-space: pre-wrap;
+/* SCR-02 台本設定 */
+.script-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--color-line);
+  border-radius: 18px;
+  font: inherit;
+  font-size: 1.1rem;
+  color: var(--color-ink);
+  background: #fff;
+  resize: vertical;
+}
+
+.script-input:focus {
+  border-color: var(--color-highlight);
+  outline: 3px solid rgb(255 196 89 / 40%);
+}
+
+.char-count {
+  margin: 4px 4px 0;
+  text-align: right;
+  color: var(--color-ink-soft);
+}
+
+.preset-list label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0;
+  padding: 12px 16px;
+  border: 2px solid var(--color-line);
+  border-radius: 16px;
+  font-weight: 700;
+  background: #fff;
+  cursor: pointer;
+}
+
+.preset-list label:has(input:checked) {
+  border-color: var(--color-highlight);
+  background: #fff6d6;
+}
+
+.preset-list input {
+  accent-color: var(--color-accent);
+}
+
+.preset-preview:not(:empty) {
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: #fff;
 }
 
 /* SCR-04 結果 */
 .summary {
   display: grid;
   grid-template-columns: max-content 1fr;
-  gap: 4px 16px;
+  gap: 8px 20px;
+  padding: 18px 22px;
+  border-radius: 20px;
+  background: #fff;
+}
+
+.summary dt {
+  color: var(--color-ink-soft);
 }
 
 .summary dd {
   margin: 0;
+  font-weight: 700;
+}
+
+.transcript {
+  min-height: 3em;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: #fff;
+  white-space: pre-wrap;
+}
+
+section > .script-text {
+  padding: 16px 20px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.diff-legend span {
+  margin-right: 12px;
 }
 
 /* 台本との違いの見せ方は【未決定】。仮の表示 */
 .diff-missing {
-  color: #c0392b;
+  color: var(--color-fast);
   text-decoration: line-through;
 }
 
 .diff-extra {
-  color: #2c6fbb;
+  color: var(--color-slow);
   text-decoration: underline;
 }
 
 /* SCR-05 履歴 */
 .history-table {
   width: 100%;
-  border-collapse: collapse;
+  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 18px;
+  background: #fff;
 }
 
 .history-table th,
 .history-table td {
-  padding: 6px 8px;
-  border-bottom: 1px solid #ddd;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-line);
   text-align: left;
+}
+
+.history-table th {
+  font-weight: 700;
+  color: var(--color-ink-soft);
+  background: #fff6d6;
+}
+
+.history-table tbody tr:last-child td {
+  border-bottom: 0;
 }
 
 .history-table tbody tr {
@@ -141,5 +754,20 @@ button {
 
 .history-table tbody tr:hover,
 .history-table tbody tr:focus {
-  background: #f2f6fb;
+  background: #fff9e3;
+}
+
+.history-table td button {
+  margin: 0;
+  padding: 4px 14px;
+}
+
+/* 動きを減らす設定のときはアニメーションを止める */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
