@@ -7,7 +7,6 @@ import type { AudienceSpriteKey, SpeedLevel } from '../types';
 // 判定が出る前は通常の観客(sprite_normal)を出す
 // TODO【未決定】: 描画方法(PixiJS か <img> の切り替えか)は未決定のため、仮実装として <img> の切り替えで表示する
 // TODO【未決定】: 観客の人数、画像サイズ、アニメーションの有無は未決定
-// TODO: audience_optimal / fast の画像は仮置き(sprite_normal に色を付けたもの)。絵ができたら差し替える
 
 /** 背景の画像ファイル名。どの状態でも変わらない */
 const BACKGROUND_SPRITE_FILE = 'sprite_bg.svg';
@@ -30,11 +29,10 @@ const SPRITE_ALT_LABELS: Record<AudienceSpriteKey, string> = {
 };
 
 /** スプライトキーに対応する画像ファイル名のマップ */
-// TODO: optimal / fast も絵ができたら差し替える
 const SPRITE_FILES: Record<AudienceSpriteKey, string> = {
   audience_slow: 'sprite_slow.svg',
-  audience_optimal: 'audience_optimal.png',
-  audience_fast: 'audience_fast.png',
+  audience_optimal: 'sprite_good.svg',
+  audience_fast: 'sprite_fast.svg',
 };
 
 /** スプライトキーから画像ファイルのパスを作る */

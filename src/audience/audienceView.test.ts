@@ -92,8 +92,8 @@ describe('AudienceView (F-05)', () => {
     expect(createdImages).toHaveLength(3);
     expect(createdImages.map((img) => img.src)).toEqual([
       '/sprites/sprite_slow.svg',
-      '/sprites/audience_optimal.png',
-      '/sprites/audience_fast.png',
+      '/sprites/sprite_good.svg',
+      '/sprites/sprite_fast.svg',
     ]);
     expect(decodeMock).toHaveBeenCalledTimes(3);
   });
@@ -133,13 +133,13 @@ describe('AudienceView (F-05)', () => {
       },
       {
         spriteKey: 'audience_optimal',
-        expectedSrc: '/sprites/audience_optimal.png',
+        expectedSrc: '/sprites/sprite_good.svg',
         expectedAlt: '観客(最適)',
         expectedLevel: 'optimal',
       },
       {
         spriteKey: 'audience_fast',
-        expectedSrc: '/sprites/audience_fast.png',
+        expectedSrc: '/sprites/sprite_fast.svg',
         expectedAlt: '観客(速い)',
         expectedLevel: 'fast',
       },
@@ -181,6 +181,6 @@ describe('AudienceView (F-05)', () => {
     // 3回目: audience_fast に変わるため更新される
     view.setSprite('audience_fast');
     expect(srcSetterSpy).toHaveBeenCalledTimes(2);
-    expect(img.src).toBe('/sprites/audience_fast.png');
+    expect(img.src).toBe('/sprites/sprite_fast.svg');
   });
 });
