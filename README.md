@@ -3,7 +3,7 @@
 マイク音声の文字起こしから話す速さ(文字/分)を計測して観客の反応で伝え、台本がある場合は練習後に一致度を示す Web アプリ。
 
 - 要求定義書: [docs/要求定義書.md](docs/要求定義書.md)
-- 要件定義書: [docs/要件定義書.md](docs/要件定義書.md)(命名・フォルダ構成・型は **8章** に従う)
+- 要件定義書: [docs/要件定義書.md](docs/要件定義書.md)(命名・フォルダ構成・型は8章に従う)
 
 ## 環境構築
 
@@ -11,7 +11,7 @@
 
 ### 1. fnm と Node.js 24 を入れる
 
-Windows(PowerShell):
+Windows では、PowerShell で次を実行する。
 
 ```powershell
 winget install Schniz.fnm
@@ -22,7 +22,7 @@ fnm default 24
 node -v   # v24.x.x と出ればよい
 ```
 
-WSL / Mac / Linux:
+WSL・Mac・Linux では、ターミナルで次を実行する。
 
 ```bash
 curl -fsSL https://fnm.vercel.app/install | bash
@@ -40,7 +40,7 @@ npm ci          # npm install ではなく npm ci(package-lock.json どおりに
 npm run dev
 ```
 
-表示された `http://localhost:5173` を **Chrome か Edge** で開く。マイクは `localhost` か https でしか使えない。
+表示された `http://localhost:5173` を Chrome か Edge で開く。マイクは `localhost` か https でしか使えない。
 
 ### 3. VS Code
 
@@ -62,10 +62,10 @@ npm run dev
 
 ## フォルダ構成
 
-要件定義書 8.2 のとおり(たたき台で足したものは要件定義書に「(たたき台で追加)」と書いてある)。
+フォルダ構成は要件定義書 8.2 のとおり。たたき台で足したものには、要件定義書に「(たたき台で追加)」と書いてある。
 
-- **画面(`screens/`)は完成している。** 5.1 の項目、5.2 の遷移、5.3 のエラー表示がそろっていて、8.5 の関数を呼んでいる
-- **8.5 の関数の中身は空。** 画面を最後まで操作できるよう仮の値(0、空の配列など)を返していて、`// TODO(F-xx): 未実装` と書いてある。担当者はここを実装する
+- 画面(`screens/`)は完成している。5.1 の項目、5.2 の遷移、5.3 のエラー表示がそろっていて、8.5 の関数を呼んでいる
+- **8.5 の関数の中身は空**。画面を最後まで操作できるよう仮の値(0、空の配列など)を返していて、`// TODO(F-xx): 未実装` と書いてある。担当者はここを実装する
 
 ```text
 src/
