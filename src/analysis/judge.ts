@@ -16,6 +16,5 @@ export function judgeSpeed(cpm: number): SpeedLevel {
 
 /** スプライトキーを返す(4.3の表) */
 export function getAudienceSpriteKey(speedLevel: SpeedLevel): AudienceSpriteKey {
-  // TODO(F-05): 未実装。仮の値を返している
-  return 'audience_optimal';
+  return `audience_${speedLevel}`;
 }

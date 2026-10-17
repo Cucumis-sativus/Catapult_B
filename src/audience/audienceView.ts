@@ -2,12 +2,12 @@ import { SPEED_LEVEL_LABELS, SPRITE_BASE_PATH } from '../constants';
 import type { AudienceSpriteKey, SpeedLevel } from '../types';
 
 // 観客スプライトの表示(F-05、要件定義書 4.3)
-// 画像は public/sprites/{spriteKey}.png。パスは SPRITE_BASE_PATH から作る
+// 画像は public/sprites/ に置く(ファイル名は SPRITE_FILES)。パスは SPRITE_BASE_PATH から作る
 // 背景(sprite_bg)の上に観客の画像を重ねる。2枚は同じ縦横比で、そのまま重ねると位置が合う
 // 判定が出る前は通常の観客(sprite_normal)を出す
 // TODO【未決定】: 描画方法(PixiJS か <img> の切り替えか)は未決定のため、仮実装として <img> の切り替えで表示する
 // TODO【未決定】: 観客の人数、画像サイズ、アニメーションの有無は未決定
-// TODO: audience_slow / optimal / fast の画像は仮置き(sprite_normal に色を付けたもの)。絵ができたら差し替える
+// TODO: audience_optimal / fast の画像は仮置き(sprite_normal に色を付けたもの)。絵ができたら差し替える
 
 /** 背景の画像ファイル名。どの状態でも変わらない */
 const BACKGROUND_SPRITE_FILE = 'sprite_bg.svg';
@@ -29,9 +29,17 @@ const SPRITE_ALT_LABELS: Record<AudienceSpriteKey, string> = {
   audience_fast: `観客(${SPEED_LEVEL_LABELS.fast})`,
 };
 
+/** スプライトキーに対応する画像ファイル名のマップ */
+// TODO: optimal / fast も絵ができたら差し替える
+const SPRITE_FILES: Record<AudienceSpriteKey, string> = {
+  audience_slow: 'sprite_slow.svg',
+  audience_optimal: 'audience_optimal.png',
+  audience_fast: 'audience_fast.png',
+};
+
 /** スプライトキーから画像ファイルのパスを作る */
 function buildSpritePath(spriteKey: AudienceSpriteKey): string {
-  return `${SPRITE_BASE_PATH}${spriteKey}.png`;
+  return `${SPRITE_BASE_PATH}${SPRITE_FILES[spriteKey]}`;
 }
 
 /** スプライトキーから SpeedLevel を取り出す */

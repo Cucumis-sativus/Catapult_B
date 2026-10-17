@@ -91,7 +91,7 @@ describe('AudienceView (F-05)', () => {
 
     expect(createdImages).toHaveLength(3);
     expect(createdImages.map((img) => img.src)).toEqual([
-      '/sprites/audience_slow.png',
+      '/sprites/sprite_slow.svg',
       '/sprites/audience_optimal.png',
       '/sprites/audience_fast.png',
     ]);
@@ -127,7 +127,7 @@ describe('AudienceView (F-05)', () => {
     }[] = [
       {
         spriteKey: 'audience_slow',
-        expectedSrc: '/sprites/audience_slow.png',
+        expectedSrc: '/sprites/sprite_slow.svg',
         expectedAlt: '観客(遅い)',
         expectedLevel: 'slow',
       },
@@ -172,7 +172,7 @@ describe('AudienceView (F-05)', () => {
     // 1回目: audience_slow に切り替わる
     view.setSprite('audience_slow');
     expect(srcSetterSpy).toHaveBeenCalledTimes(1);
-    expect(img.src).toBe('/sprites/audience_slow.png');
+    expect(img.src).toBe('/sprites/sprite_slow.svg');
 
     // 2回目: 同じ audience_slow なので何もしない
     view.setSprite('audience_slow');
