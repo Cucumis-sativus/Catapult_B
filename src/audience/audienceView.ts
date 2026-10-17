@@ -1,21 +1,99 @@
-import type { AudienceSpriteKey } from '../types';
+import { SPEED_LEVEL_LABELS, SPRITE_BASE_PATH } from '../constants';
+import type { AudienceSpriteKey, SpeedLevel } from '../types';
 
 // 観客スプライトの表示(F-05、要件定義書 4.3)
 // 画像は public/sprites/{spriteKey}.png。パスは SPRITE_BASE_PATH から作る
-// 描画方法(PixiJS か <img> の切り替えか)は【未決定】
+// TODO【未決定】: 描画方法(PixiJS か <img> の切り替えか)は未決定のため、仮実装として <img> の切り替えで表示する
+// TODO【未決定】: 観客の人数、画像サイズ、アニメーションの有無は未決定
+
+/** 読み込む3種類のスプライトキー一覧(4.3の表) */
+const AUDIENCE_SPRITE_KEYS: readonly AudienceSpriteKey[] = [
+  'audience_slow',
+  'audience_optimal',
+  'audience_fast',
+];
+
+/** スプライトキーに対応する代替テキストのマップ */
+const SPRITE_ALT_LABELS: Record<AudienceSpriteKey, string> = {
+  audience_slow: `観客(${SPEED_LEVEL_LABELS.slow})`,
+  audience_optimal: `観客(${SPEED_LEVEL_LABELS.optimal})`,
+  audience_fast: `観客(${SPEED_LEVEL_LABELS.fast})`,
+};
+
+/** スプライトキーから画像ファイルのパスを作る */
+function buildSpritePath(spriteKey: AudienceSpriteKey): string {
+  return `${SPRITE_BASE_PATH}${spriteKey}.png`;
+}
+
+/** スプライトキーから SpeedLevel を取り出す */
+function extractSpeedLevel(spriteKey: AudienceSpriteKey): SpeedLevel {
+  switch (spriteKey) {
+    case 'audience_slow':
+      return 'slow';
+    case 'audience_optimal':
+      return 'optimal';
+    case 'audience_fast':
+      return 'fast';
+  }
+}
+
 export class AudienceView {
+  /** 観客画像を表示する img 要素 */
+  private readonly imageElement: HTMLImageElement;
+
+  /** 現在表示しているスプライトキー(未設定時は null) */
+  private currentSpriteKey: AudienceSpriteKey | null = null;
+
+  /** 先読みした画像要素のキャッシュ */
+  private readonly preloadedImages = new Map<AudienceSpriteKey, HTMLImageElement>();
+
   /** container: 観客を描く場所(練習画面が渡す) */
   constructor(container: HTMLElement) {
-    // TODO(F-05): 未実装
+    const img = document.createElement('img');
+    img.className = 'audience-sprite';
+    // TODO【未決定】: 練習開始直後など、まだ判定が出ていないときの表示は未決定(待機用スプライトを用意するか、audience_optimal を出すか)。仮実装として audience_optimal の画像パスを初期設定する
+    img.src = buildSpritePath('audience_optimal');
+    img.alt = SPRITE_ALT_LABELS.audience_optimal;
+    this.imageElement = img;
+    container.append(img);
   }
 
   /** 3枚の画像を先に読み込む */
   async loadSprites(): Promise<void> {
-    // TODO(F-05): 未実装
+    this.preloadedImages.clear();
+
+    const loadPromises = AUDIENCE_SPRITE_KEYS.map(async (spriteKey): Promise<void> => {
+      const spritePath = buildSpritePath(spriteKey);
+      const img = typeof Image !== 'undefined' ? new Image() : document.createElement('img');
+      img.src = spritePath;
+      img.alt = SPRITE_ALT_LABELS[spriteKey];
+      this.preloadedImages.set(spriteKey, img);
+
+      if (typeof img.decode === 'function') {
+        try {
+          await img.decode();
+        } catch {
+          // 画像のデコードに失敗しても練習進行は止めない
+        }
+      }
+    });
+
+    await Promise.all(loadPromises);
   }
 
   /** 観客の画像を切り替える。前回と同じキーなら何もしない */
   setSprite(spriteKey: AudienceSpriteKey): void {
-    // TODO(F-05): 未実装
+    if (this.currentSpriteKey === spriteKey) {
+      return;
+    }
+
+    this.currentSpriteKey = spriteKey;
+    const preloaded = this.preloadedImages.get(spriteKey);
+    this.imageElement.src = preloaded ? preloaded.src : buildSpritePath(spriteKey);
+    this.imageElement.alt = SPRITE_ALT_LABELS[spriteKey];
+    if (this.imageElement.dataset) {
+      this.imageElement.dataset.spriteKey = spriteKey;
+      this.imageElement.dataset.speedLevel = extractSpeedLevel(spriteKey);
+    }
   }
 }
