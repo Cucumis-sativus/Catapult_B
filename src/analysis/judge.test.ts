@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { judgeSpeed } from './judge';
+import { getAudienceSpriteKey, judgeSpeed } from './judge';
 
 // 要件定義書 10.2 のテスト。実装したら it.todo を it に書き換える
 
@@ -18,5 +18,9 @@ describe('judgeSpeed (T-01)', () => {
 });
 
 describe('getAudienceSpriteKey (T-02)', () => {
-  it.todo('3通りすべてで 4.3 の表と同じキーが返る');
+  it('3通りすべてで 4.3 の表と同じキーが返る', () => {
+    expect(getAudienceSpriteKey('slow')).toBe('audience_slow');
+    expect(getAudienceSpriteKey('optimal')).toBe('audience_optimal');
+    expect(getAudienceSpriteKey('fast')).toBe('audience_fast');
+  });
 });
