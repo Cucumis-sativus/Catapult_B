@@ -10,7 +10,7 @@ export interface AppState {
 }
 
 export const appState: AppState = {
-  mode: null,
+  mode: 'free', // 起動時は台本なしモードで始める
   script: null,
   record: null,
   isSaveFailed: false,

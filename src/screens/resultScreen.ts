@@ -7,7 +7,6 @@ import {
   createErrorArea,
   formatDurationSec,
   renderErrorMessage,
-  startPractice,
 } from './screenParts';
 
 // SCR-04 結果(要件定義書 5.1)
@@ -41,13 +40,18 @@ export function renderResultScreen(
     return;
   }
 
-  /** 「もう一度練習」が押されたとき(同じモード・同じ台本): F-02 → SCR-03 */
+  /**
+   * 「もう一度練習」が押されたとき(同じモード・同じ台本): SCR-01
+   * ホーム画面に同じモードと台本を入れて戻る。練習はホーム画面の「開始」で始める
+   */
   const handleRetryClick = (): void => {
     const script: ScriptSource | null =
       record.scriptText === null
         ? null
         : { title: record.scriptTitle ?? '', text: record.scriptText };
-    void startPractice(record.mode, script, errorArea, showScreen);
+    appState.mode = record.mode;
+    appState.script = script;
+    showScreen('home');
   };
 
   container.append(createSummaryList(record));
@@ -64,13 +68,17 @@ export function renderResultScreen(
   transcriptElement.className = 'transcript';
   transcriptElement.textContent = record.transcript || '(文字起こしはありません)';
 
-  container.append(
-    transcriptHeading,
-    transcriptElement,
-    createButton('もう一度練習', handleRetryClick),
+  const retryButton = createButton('もう一度練習', handleRetryClick);
+  retryButton.classList.add('button-primary');
+  const actions = document.createElement('div');
+  actions.className = 'page-actions';
+  actions.append(
+    retryButton,
     createButton('履歴を見る', () => showScreen('history')),
     createButton('ホームへ', () => showScreen('home')),
   );
+
+  container.append(transcriptHeading, transcriptElement, actions);
 }
 
 /** 練習モード、練習時間、平均の速さ、最適だった時間の割合、一致度の一覧を作る */

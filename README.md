@@ -81,7 +81,7 @@ src/
   storage/historyStore.ts     履歴(F-08, F-09)
   screens/                    5つの画面。render〇〇Screen(container, showScreen) を main.ts から呼ぶ
     screenParts.ts            ボタン、エラー表示、練習の開始など画面で共通に使う部品
-public/sprites/               観客の画像3枚(今は仮の単色画像。絵の担当が差し替える)
+public/sprites/               背景、通常の観客、判定ごとの観客3枚(3枚は今は仮の画像。絵の担当が差し替える)
 ```
 
 AI コーディングツールを使う場合のルールは [AGENTS.md](AGENTS.md) にある。Claude Code は `CLAUDE.md` から同じ内容を読む。

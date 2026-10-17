@@ -3,10 +3,11 @@ import { appState } from '../appState';
 import { SCRIPT_MAX_LENGTH } from '../constants';
 import { createScriptSource, getPresetScripts, validateScript } from '../session/scriptSetup';
 import type { AppErrorCode, ScreenId } from '../types';
-import { createButton, createErrorArea, renderErrorMessage, startPractice } from './screenParts';
+import { createButton, createErrorArea, renderErrorMessage } from './screenParts';
 
 // SCR-02 台本設定(要件定義書 5.1)
-// 自分の台本モード(custom)とお題文モード(preset)でだけ通る
+// ホーム画面のメニューで「自分の台本」(custom)か「お題文」(preset)を選んだときだけ通る
+// 「決定」でホーム画面に戻り、台本が「開始」ボタンの上に出る。練習はホーム画面の「開始」で始める
 
 /** 台本設定画面を描く */
 export function renderScriptScreen(
@@ -14,6 +15,8 @@ export function renderScriptScreen(
   showScreen: (screenId: ScreenId) => void,
 ): void {
   const mode = appState.mode === 'preset' ? 'preset' : 'custom';
+  // 前に決めた台本があれば、入力欄や選択に入れておく
+  const currentScript = appState.script;
   const errorArea = createErrorArea();
 
   const heading = document.createElement('h1');
@@ -24,7 +27,11 @@ export function renderScriptScreen(
   scriptInput.className = 'script-input';
   scriptInput.rows = 12;
   scriptInput.placeholder = 'ここに台本を入力してください。';
+  if (mode === 'custom' && currentScript !== null) {
+    scriptInput.value = currentScript.text;
+  }
   const charCountElement = document.createElement('p');
+  charCountElement.className = 'char-count';
 
   /** 入力された台本の文字数を出し直す */
   const handleScriptInput = (): void => {
@@ -38,7 +45,7 @@ export function renderScriptScreen(
   const presetList = document.createElement('div');
   presetList.className = 'preset-list';
   const presetPreview = document.createElement('p');
-  presetPreview.className = 'script-text';
+  presetPreview.className = 'script-text preset-preview';
 
   const presetScripts = getPresetScripts();
   if (presetScripts.length === 0) {
@@ -55,12 +62,22 @@ export function renderScriptScreen(
       presetPreview.textContent = preset.text;
       renderErrorMessage(errorArea, null);
     });
+    if (
+      mode === 'preset' &&
+      currentScript !== null &&
+      currentScript.title === preset.title &&
+      currentScript.text === preset.text
+    ) {
+      radio.checked = true;
+      selectedPresetId = preset.id;
+      presetPreview.textContent = preset.text;
+    }
     label.append(radio, ` ${preset.title}(${countCharacters(preset.text)} 文字)`);
     presetList.append(label);
   }
 
-  /** 「練習を始める」が押されたとき: F-01(入力チェック)、F-02 → SCR-03 */
-  const handleStartClick = (): void => {
+  /** 「決定」が押されたとき: F-01(入力チェック) → SCR-01 */
+  const handleDecideClick = (): void => {
     let errorCode: AppErrorCode | null;
     let input: string;
     if (mode === 'custom') {
@@ -74,9 +91,19 @@ export function renderScriptScreen(
       renderErrorMessage(errorArea, errorCode);
       return;
     }
-    const script = createScriptSource(mode, input);
-    void startPractice(mode, script, errorArea, showScreen);
+    appState.mode = mode;
+    appState.script = createScriptSource(mode, input);
+    showScreen('home');
   };
+
+  const decideButton = createButton('決定', handleDecideClick);
+  decideButton.classList.add('button-primary');
+  const actions = document.createElement('div');
+  actions.className = 'page-actions';
+  actions.append(
+    decideButton,
+    createButton('戻る', () => showScreen('home')),
+  );
 
   container.append(heading);
   if (mode === 'custom') {
@@ -84,9 +111,5 @@ export function renderScriptScreen(
   } else {
     container.append(presetList, presetPreview);
   }
-  container.append(
-    errorArea,
-    createButton('練習を始める', handleStartClick),
-    createButton('戻る', () => showScreen('home')),
-  );
+  container.append(errorArea, actions);
 }
