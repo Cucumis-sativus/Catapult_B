@@ -139,6 +139,9 @@ export async function startSession(mode: PracticeMode, script: ScriptSource | nu
       releaseMediaStream();
       return Promise.reject(mapMediaErrorToCode(error));
     }
+    // マイクの許可と接続を確かめるためだけに開く。音声認識はブラウザが別にマイクを使う。
+    // 開いたままにすると、ブラウザの自動音量調整がマイクの音量を変えて認識に響くことがあるので、すぐ閉じる
+    releaseMediaStream();
   }
 
   let startupError: AppErrorCode | null = null;
