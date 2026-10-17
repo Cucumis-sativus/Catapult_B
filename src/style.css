@@ -132,7 +132,7 @@ button:disabled {
   background: var(--color-floor);
 }
 
-/* 画像の外側の帯。空と壁の境目は、画像の左端で 14.43%、右端で 15.74% の高さにある */
+/* 画像の外側の帯。空と壁の境目は、画像の左端で 20.62%、右端で 16.80% の高さにある。壁と床の境目は 80.95% */
 .stage::before,
 .stage::after {
   content: '';
@@ -146,8 +146,8 @@ button:disabled {
   left: 0;
   background: linear-gradient(
     to bottom,
-    var(--color-sky) calc(var(--scene-top) + var(--scene-h) * 0.1443),
-    var(--color-wall) 0 calc(var(--scene-top) + var(--scene-h) * 0.8092),
+    var(--color-sky) calc(var(--scene-top) + var(--scene-h) * 0.2062),
+    var(--color-wall) 0 calc(var(--scene-top) + var(--scene-h) * 0.8095),
     var(--color-floor) 0
   );
 }
@@ -156,8 +156,8 @@ button:disabled {
   right: 0;
   background: linear-gradient(
     to bottom,
-    var(--color-sky) calc(var(--scene-top) + var(--scene-h) * 0.1574),
-    var(--color-wall) 0 calc(var(--scene-top) + var(--scene-h) * 0.8092),
+    var(--color-sky) calc(var(--scene-top) + var(--scene-h) * 0.168),
+    var(--color-wall) 0 calc(var(--scene-top) + var(--scene-h) * 0.8095),
     var(--color-floor) 0
   );
 }
