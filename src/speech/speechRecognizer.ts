@@ -84,11 +84,14 @@ function mapErrorCode(error: string): AppErrorCode | null {
 // 音声認識(F-03)
 // Web Speech API で日本語(SPEECH_LANG)を連続認識する。途中結果と確定結果を受け取り、
 // 認識が自動で止まったら再開する。エラーは AppErrorCode に直して onError の関数に渡す
+// 途中結果はブラウザが複数のかたまりに分けて返すことがあるので、つなげて1つにして渡す
 export class SpeechRecognizer {
   private recognition: SpeechRecognitionInstance | null = null;
   private isRunning: boolean = false;
   private resultCallback: ResultCallback | null = null;
   private errorCallback: ErrorCallback | null = null;
+  /** まだ確定していない途中結果。確定する前に認識が止まったときに確定として渡す */
+  private pendingInterimTranscript: string = '';
 
   /** 認識を始める */
   start(): void {
@@ -103,6 +106,7 @@ export class SpeechRecognizer {
     }
 
     this.isRunning = true;
+    this.pendingInterimTranscript = '';
     this.recognition = this.createRecognition(RecognitionConstructor);
     this.startRecognition();
   }
@@ -110,6 +114,7 @@ export class SpeechRecognizer {
   /** 認識を止める */
   stop(): void {
     this.isRunning = false;
+    this.pendingInterimTranscript = '';
     if (!this.recognition) {
       return;
     }
@@ -147,16 +152,23 @@ export class SpeechRecognizer {
     recognition.continuous = true;
     recognition.interimResults = true;
 
+    // stop() したあとに届いたイベントは使わない(次の練習に前の結果が混ざらないようにする)
     recognition.onresult = (event: SpeechRecognitionResultEvent): void => {
-      this.handleResult(event);
+      if (recognition === this.recognition) {
+        this.handleResult(event);
+      }
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEventItem): void => {
-      this.handleError(event);
+      if (recognition === this.recognition) {
+        this.handleError(event);
+      }
     };
 
     recognition.onend = (): void => {
-      this.handleEnd();
+      if (recognition === this.recognition) {
+        this.handleEnd();
+      }
     };
 
     return recognition;
@@ -175,25 +187,34 @@ export class SpeechRecognizer {
     }
   }
 
-  /** 認識結果イベントを処理する */
+  /**
+   * 認識結果イベントを処理する。
+   * event.results には、この認識で出た結果がすべて入っている。確定した結果は変わらないので、
+   * 新しく確定したもの(resultIndex 以降)だけを1件ずつ渡す。
+   * 途中結果は複数のかたまりに分かれて届き、変わったかたまりだけが resultIndex 以降に来ることもある。
+   * そのため全件からつなげ直し、いまの途中結果の全体として1回渡す
+   */
   private handleResult(event: SpeechRecognitionResultEvent): void {
     if (!this.resultCallback) {
       return;
     }
 
-    for (let i = event.resultIndex; i < event.results.length; i += 1) {
+    let interimTranscript = '';
+    for (let i = 0; i < event.results.length; i += 1) {
       const result = event.results[i];
-      if (!result || result.length === 0) {
+      const transcript = result && result.length > 0 ? result[0]?.transcript : undefined;
+      if (!result || transcript === undefined) {
         continue;
       }
-      const alternative = result[0];
-      if (!alternative) {
-        continue;
+      if (!result.isFinal) {
+        interimTranscript += transcript;
+      } else if (i >= event.resultIndex) {
+        this.resultCallback(transcript, true);
       }
-      const transcript = alternative.transcript;
-      const isFinal = result.isFinal;
-      this.resultCallback(transcript, isFinal);
     }
+
+    this.pendingInterimTranscript = interimTranscript;
+    this.resultCallback(interimTranscript, false);
   }
 
   /** エラーイベントを処理する */
@@ -213,6 +234,13 @@ export class SpeechRecognizer {
   private handleEnd(): void {
     if (!this.isRunning) {
       return;
+    }
+
+    // 確定する前に止まった途中結果は、再開すると消えてしまうので確定として渡しておく
+    if (this.pendingInterimTranscript !== '') {
+      const transcript = this.pendingInterimTranscript;
+      this.pendingInterimTranscript = '';
+      this.resultCallback?.(transcript, true);
     }
 
     this.startRecognition();
