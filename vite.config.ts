@@ -11,8 +11,20 @@ async function loadGzipArrayBuffer(url) {
   if (!response.ok || !response.body) {
     throw new Error('Failed to load dictionary: ' + url);
   }
-  const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'));
-  return new Response(decompressedStream).arrayBuffer();
+  // 【元に戻す場合】下の rawBuffer 判定ブロックを消し、以下の2行のコメントを外す:
+  // const decompressedStream = response.body.pipeThrough(new DecompressionStream('gzip'));
+  // return new Response(decompressedStream).arrayBuffer();
+
+  const rawBuffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(rawBuffer);
+  // 先頭2バイトが gzip マジックナンバー(0x1f, 0x8b)のときだけ解凍し、既に解凍済みならそのまま返す
+  if (bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+    const decompressedStream = new Blob([rawBuffer])
+      .stream()
+      .pipeThrough(new DecompressionStream('gzip'));
+    return new Response(decompressedStream).arrayBuffer();
+  }
+  return rawBuffer;
 }
 
 async function loadDictionaries(dicPath) {
