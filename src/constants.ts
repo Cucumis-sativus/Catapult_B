@@ -9,8 +9,11 @@ export const SPEED_MIN_CPM = 250;
 /** 速さの最適範囲の上限(文字/分) */
 export const SPEED_MAX_CPM = 350;
 
-/** 速さを計算する対象期間(秒)【未決定:仮値10】 */
-export const SPEED_WINDOW_SEC = 10;
+/** 速さを計算する対象期間(秒)【未決定:仮値20】 */
+export const SPEED_WINDOW_SEC = 20;
+
+/** 文字が増えないまま この秒数たったら、黙っているとみなして速さの判定を止める(4.1)【未決定:仮値3】 */
+export const SPEED_SILENCE_SEC = 3;
 
 /** 判定と観客更新の間隔(ミリ秒)【未決定:仮値1000】 */
 export const JUDGE_INTERVAL_MS = 1000;
