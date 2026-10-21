@@ -165,25 +165,25 @@ describe('practiceSession (F-02, F-03, F-04, F-07)', () => {
     it('直近 SPEED_WINDOW_SEC 秒の文字数から cpm と speedLevel を計算する', async () => {
       const sendResult = await startFreeSession();
 
-      // 5秒経過時点で25文字(300文字/分 → optimal)
-      vi.advanceTimersByTime(5000);
-      sendResult('あ'.repeat(25), true);
-      expect(updateJudgement()).toEqual({ elapsedSec: 5, cpm: 300, speedLevel: 'optimal' });
-
-      // 10秒経過時点で合計50文字(直近10秒で50文字 = 300文字/分 → optimal)
-      vi.advanceTimersByTime(5000);
-      sendResult('あ'.repeat(25), true);
+      // 10秒経過時点で50文字(300文字/分 → optimal)
+      vi.advanceTimersByTime(10000);
+      sendResult('あ'.repeat(50), true);
       expect(updateJudgement()).toEqual({ elapsedSec: 10, cpm: 300, speedLevel: 'optimal' });
 
-      // 15秒経過時点でさらに30文字(5秒〜15秒の10秒間で55文字 = 330文字/分 → optimal)
-      vi.advanceTimersByTime(5000);
-      sendResult('あ'.repeat(30), true);
-      expect(updateJudgement()).toEqual({ elapsedSec: 15, cpm: 330, speedLevel: 'optimal' });
+      // 20秒経過時点で合計100文字(直近20秒で100文字 = 300文字/分 → optimal)
+      vi.advanceTimersByTime(10000);
+      sendResult('あ'.repeat(50), true);
+      expect(updateJudgement()).toEqual({ elapsedSec: 20, cpm: 300, speedLevel: 'optimal' });
 
-      // 20秒経過時点でさらに65文字(10秒〜20秒の10秒間で95文字 = 570文字/分 → fast)
-      vi.advanceTimersByTime(5000);
-      sendResult('あ'.repeat(65), true);
-      expect(updateJudgement()).toEqual({ elapsedSec: 20, cpm: 570, speedLevel: 'fast' });
+      // 30秒経過時点でさらに40文字(10秒〜30秒の20秒間で90文字 = 270文字/分 → optimal)
+      vi.advanceTimersByTime(10000);
+      sendResult('あ'.repeat(40), true);
+      expect(updateJudgement()).toEqual({ elapsedSec: 30, cpm: 270, speedLevel: 'optimal' });
+
+      // 40秒経過時点でさらに130文字(20秒〜40秒の20秒間で170文字 = 510文字/分 → fast)
+      vi.advanceTimersByTime(10000);
+      sendResult('あ'.repeat(130), true);
+      expect(updateJudgement()).toEqual({ elapsedSec: 40, cpm: 510, speedLevel: 'fast' });
 
       const record = stopSession();
       // 4サンプルのうち3サンプルが optimal なので 0.75
@@ -218,7 +218,7 @@ describe('practiceSession (F-02, F-03, F-04, F-07)', () => {
       });
 
       // 25秒経過時点でさらに40文字。黙っていた7秒(13秒〜20秒)を除くと話していたのは18秒。
-      // 直近10秒(話していた時間で8秒〜18秒)の基準は5秒時点の25文字なので、65文字 ÷ 13秒 = 300文字/分
+      // 対象期間の SPEED_WINDOW_SEC 秒に満たないので、90文字 ÷ 18秒 = 300文字/分
       vi.advanceTimersByTime(5000);
       sendResult('あ'.repeat(40), true);
       expect(updateJudgement()).toEqual({ elapsedSec: 25, cpm: 300, speedLevel: 'optimal' });
