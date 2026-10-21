@@ -142,7 +142,8 @@ describe('practiceSession (F-02, F-03, F-04, F-07)', () => {
   });
 
   describe('updateJudgement (F-04)', () => {
-    it('直近 SPEED_WINDOW_SEC 秒の文字数から cpm と speedLevel を計算し、終了時の集計に反映する', async () => {
+    /** 練習を始め、文字起こし結果を流し込む関数を返す */
+    async function startFreeSession(): Promise<(transcript: string, isFinal: boolean) => void> {
       vi.spyOn(SpeechRecognizer.prototype, 'isSupported').mockReturnValue(true);
       vi.spyOn(SpeechRecognizer.prototype, 'start').mockImplementation(() => {});
       vi.spyOn(SpeechRecognizer.prototype, 'stop').mockImplementation(() => {});
@@ -158,50 +159,109 @@ describe('practiceSession (F-02, F-03, F-04, F-07)', () => {
       await startSession('free', null);
       const resultCallback = onResultSpy.mock.calls[0]?.[0];
       expect(resultCallback).toBeDefined();
+      return (transcript: string, isFinal: boolean): void => resultCallback?.(transcript, isFinal);
+    }
+
+    it('直近 SPEED_WINDOW_SEC 秒の文字数から cpm と speedLevel を計算する', async () => {
+      const sendResult = await startFreeSession();
 
       // 5秒経過時点で25文字(300文字/分 → optimal)
       vi.advanceTimersByTime(5000);
-      resultCallback?.('あ'.repeat(25), true);
-      const sample1 = updateJudgement();
-      expect(sample1).toEqual({
-        elapsedSec: 5,
-        cpm: 300,
-        speedLevel: 'optimal',
-      });
+      sendResult('あ'.repeat(25), true);
+      expect(updateJudgement()).toEqual({ elapsedSec: 5, cpm: 300, speedLevel: 'optimal' });
 
       // 10秒経過時点で合計50文字(直近10秒で50文字 = 300文字/分 → optimal)
       vi.advanceTimersByTime(5000);
-      resultCallback?.('あ'.repeat(25), true);
-      const sample2 = updateJudgement();
-      expect(sample2).toEqual({
-        elapsedSec: 10,
-        cpm: 300,
+      sendResult('あ'.repeat(25), true);
+      expect(updateJudgement()).toEqual({ elapsedSec: 10, cpm: 300, speedLevel: 'optimal' });
+
+      // 15秒経過時点でさらに30文字(5秒〜15秒の10秒間で55文字 = 330文字/分 → optimal)
+      vi.advanceTimersByTime(5000);
+      sendResult('あ'.repeat(30), true);
+      expect(updateJudgement()).toEqual({ elapsedSec: 15, cpm: 330, speedLevel: 'optimal' });
+
+      // 20秒経過時点でさらに65文字(10秒〜20秒の10秒間で95文字 = 570文字/分 → fast)
+      vi.advanceTimersByTime(5000);
+      sendResult('あ'.repeat(65), true);
+      expect(updateJudgement()).toEqual({ elapsedSec: 20, cpm: 570, speedLevel: 'fast' });
+
+      const record = stopSession();
+      // 4サンプルのうち3サンプルが optimal なので 0.75
+      expect(record.speedOptimalRatio).toBe(0.75);
+      expect(record.samples).toHaveLength(4);
+    });
+
+    it('SPEED_SILENCE_SEC 秒未満の間は判定を続け、それを超えて黙ると直前の判定を保つ', async () => {
+      const sendResult = await startFreeSession();
+
+      vi.advanceTimersByTime(5000);
+      sendResult('あ'.repeat(25), true);
+      updateJudgement();
+      vi.advanceTimersByTime(5000);
+      sendResult('あ'.repeat(25), true);
+      updateJudgement();
+
+      // 12秒経過時点: 文字が増えてから2秒なので、まだ黙っているとはみなさない(12秒で50文字 = 250文字/分)
+      vi.advanceTimersByTime(2000);
+      expect(updateJudgement()).toEqual({
+        elapsedSec: 12,
+        cpm: expect.closeTo(250),
         speedLevel: 'optimal',
       });
 
-      // 15秒経過時点で文字が増えない場合(5秒〜15秒の10秒間で25文字 = 150文字/分 → slow)
-      vi.advanceTimersByTime(5000);
-      const sample3 = updateJudgement();
-      expect(sample3).toEqual({
-        elapsedSec: 15,
-        cpm: 150,
-        speedLevel: 'slow',
+      // 20秒経過時点: 文字が増えてから10秒。黙っているので直前の判定を保ち、記録には残さない
+      vi.advanceTimersByTime(8000);
+      expect(updateJudgement()).toEqual({
+        elapsedSec: 20,
+        cpm: expect.closeTo(250),
+        speedLevel: 'optimal',
       });
 
-      // 20秒経過時点でさらに65文字追加(10秒〜20秒の10秒間で65文字 = 390文字/分 → fast)
+      // 25秒経過時点でさらに40文字。黙っていた7秒(13秒〜20秒)を除くと話していたのは18秒。
+      // 直近10秒(話していた時間で8秒〜18秒)の基準は5秒時点の25文字なので、65文字 ÷ 13秒 = 300文字/分
       vi.advanceTimersByTime(5000);
-      resultCallback?.('あ'.repeat(65), true);
-      const sample4 = updateJudgement();
-      expect(sample4).toEqual({
-        elapsedSec: 20,
-        cpm: 390,
-        speedLevel: 'fast',
-      });
+      sendResult('あ'.repeat(40), true);
+      expect(updateJudgement()).toEqual({ elapsedSec: 25, cpm: 300, speedLevel: 'optimal' });
 
       const record = stopSession();
-      // 4サンプルのうち2サンプルが optimal なので 0.5
-      expect(record.speedOptimalRatio).toBe(0.5);
-      expect(record.samples).toHaveLength(4);
+      // 黙っていたときの計測は記録しない
+      expect(record.samples?.map((sample) => sample.elapsedSec)).toEqual([5, 10, 12, 25]);
+      expect(record.speedOptimalRatio).toBe(1);
+      // 平均速度は黙っていた7秒を除いた18秒で90文字 = 300文字/分
+      expect(record.durationSec).toBe(25);
+      expect(record.averageCpm).toBe(300);
+    });
+
+    it('途中結果の書き換えで文字数が減って戻っただけでは、話したことにしない', async () => {
+      const sendResult = await startFreeSession();
+
+      vi.advanceTimersByTime(5000);
+      sendResult('あ'.repeat(25), false);
+      updateJudgement();
+
+      // 途中結果が短くなる(文字が増えてから2秒なので、まだ判定は続ける)
+      vi.advanceTimersByTime(2000);
+      sendResult('あ'.repeat(20), false);
+      const sampleAt7Sec = updateJudgement();
+
+      // 元の文字数に戻っても、最後に文字が増えた5秒時点から3秒以上たっているので黙っているとみなす
+      vi.advanceTimersByTime(2000);
+      sendResult('あ'.repeat(25), true);
+      expect(updateJudgement()).toEqual({ ...sampleAt7Sec, elapsedSec: 9 });
+
+      const record = stopSession();
+      expect(record.samples).toHaveLength(2);
+    });
+
+    it('話し始める前に黙っているときは 0 文字/分の判定を返し、記録には残さない', async () => {
+      await startFreeSession();
+
+      vi.advanceTimersByTime(4000);
+      expect(updateJudgement()).toEqual({ elapsedSec: 4, cpm: 0, speedLevel: 'slow' });
+
+      const record = stopSession();
+      expect(record.samples).toHaveLength(0);
+      expect(record.averageCpm).toBe(0);
     });
   });
 
